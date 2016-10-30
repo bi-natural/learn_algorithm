@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 
-using namepspace std;
+using namespace std;
 
 int main()
 {
