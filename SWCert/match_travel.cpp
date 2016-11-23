@@ -471,16 +471,25 @@ double t5()
 
 							if (ali.next == noa.next) {
 								/* met !!! */
-								printf("day %d: met (%d) -- (ali: %.03f, noa: %.03f) = %.03f\n", d+1, ali.next, ali.p, noa.p, ali.p * noa.p);
-								result_f += ali.p * noa.p;
+								ex[tomorrow].p[ali.next][noa.next] += ali.p * noa.p;
+								//printf("day %d: met (%d) -- (ali: %.03f, noa: %.03f) = %.03f\n", d+1, ali.next, ali.p, noa.p, ali.p * noa.p);
+								//result_f += ali.p * noa.p;
 							} else {
 								/* not met, go continue */
-								printf("day %d: go continue -- (%d, %d, %.03f)\n", d+1, ali.next, noa.next, ali.p * noa.p);
-								ex[tomorrow].p[ali.next][noa.next] = ali.p * noa.p;
+								ex[tomorrow].p[ali.next][noa.next] += ali.p * noa.p;
+								printf("  day %d: continue -- (%d, %d, %.03f)\n", d+1, ali.next, noa.next, ex[tomorrow].p[ali.next][noa.next]);
 							}
 						}
 					}
 				}
+			}
+		}
+
+		for (int j = 1; j <= N; ++j) {
+			if (ex[tomorrow].p[j][j] > 0.0) {
+				printf("  day %d: met_stop -- (%d, %d, %.03f) !!\n", d+1, j, j, ex[tomorrow].p[j][j]);
+				result_f += ex[tomorrow].p[j][j];
+				ex[tomorrow].p[j][j] = 0.0;
 			}
 		}
 	}
