@@ -117,9 +117,9 @@ double t2()
 
 		for (int j = 1; j <= N; ++j) {
 			if (ali[j][d + 1] > 0.0 && noa[j][d + 1] > 0.0) {
-				
+
 				meet_possibility += (ali[j][d + 1] * noa[j][d + 1]);
-				
+
 				printf("%d meet at %d (%.3f, %.3f) = %.3f\n", d + 1, j, ali[j][d + 1], noa[j][d + 1], (ali[j][d + 1] * noa[j][d + 1]));
 
 				meet_cities++;
@@ -149,8 +149,8 @@ double t1()
 
 	for (int d = 2; d <= M; ++d) {
 		for (int j = 1; j <= N; ++j) {
-			for (int i = 0; i < link[j].size(); ++i) {	/* ÃÖ´ë 3°³ */
-				for (int k = 0; k < link[j].size(); ++k) { /* ÃÖ´ë 3°³ */
+			for (int i = 0; i < link[j].size(); ++i) {	/* ï¿½Ö´ï¿½ 3ï¿½ï¿½ */
+				for (int k = 0; k < link[j].size(); ++k) { /* ï¿½Ö´ï¿½ 3ï¿½ï¿½ */
 					if (i != k) {
 
 					}
@@ -345,43 +345,141 @@ double t4()
 
 		}
 
-#if 0
+#if 1
 		/* print output */
-		printf("ali:\n");
+		double a = 0.0;
+		double b = 0.0;
+		printf("ali: day %d\n", d+1);
 		for (int j = 1; j <= N; ++j) {
 			if (ali_p[tomorrow].val[j][0] > 0.0) {
-				printf(" %d: ", j);
+				a += ali_p[tomorrow].val[j][0];
+				printf(" City %d: [%.03f] ", j, ali_p[tomorrow].val[j][0]);
 				for (int k = 1; k <= N; ++k) {
 					printf("(%d, %.03f) ", k, ali_p[tomorrow].val[j][k]);
 				}
 				printf("\n");
 			}
 		}
+//		if (a != 1.0) { printf("a--> %.03f\n", a); }
 
-		printf("noa:\n");
+		printf("noa: day %d\n", d+1);
 		for (int j = 1; j <= N; ++j) {
 			if (noa_p[tomorrow].val[j][0] > 0.0) {
-				printf(" %d: ", j);
+				b += noa_p[tomorrow].val[j][0];
+				printf(" City %d: [%.03f] ", j, noa_p[tomorrow].val[j][0]);
 				for (int k = 1; k <= N; ++k) {
 					printf("(%d, %.03f) ", k, noa_p[tomorrow].val[j][k]);
 				}
 				printf("\n");
 			}
 		}
+//		if (b != 1.0) { printf("b--> %.03f\n", b); }
+
 #endif
 
 		/* calculate meet_possibility */
+		printf("day %d\n", d+1);
 		for (int j = 1; j <= N; ++j) {
 			if (ali_p[tomorrow].val[j][0] > 0.0 && noa_p[tomorrow].val[j][0] > 0.0) {
 				for (int k = 1; k <= N; ++k) {
 					double ap = ali_p[tomorrow].val[j][k];
-					double np = 0.0;
-					for (int z = 1; z <= N; ++z) {
-						if (z != k && noa_p[tomorrow].val[j][z])
-							np += noa_p[tomorrow].val[j][z];
+
+					if (ap > 0.0) {
+						for (int z = 1; z <= N; ++z) {
+							if (z != k && noa_p[tomorrow].val[j][z] > 0.0) {
+								printf("-- matched at %d : ali (%d) - noa (%d) = %.03f\n", j, k, z, ap * noa_p[tomorrow].val[j][z]);
+								result_f += (ap * noa_p[tomorrow].val[j][z]);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return result_f;
+}
+
+struct path {
+	int next;
+	double p;
+};
+
+struct dailyProb {
+	double p[MAX_N+1][MAX_N+1];
+};
+
+dailyProb ex[2];
+vector<path> ali_path;
+vector<path> noa_path;
+
+double t5()
+{
+	/* matching possilbity */
+	double result_f = 0.0;
+
+	for (int j = 1; j <= N; ++j) {
+		for (int k = 1; k <= N; ++k) {
+			ex[1].p[j][k] = 0.0;
+		}
+	}
+
+	ex[1].p[1][N] = 1.0;
+	ex[1].p[1][0] = 1.0;
+	ex[1].p[0][N] = 1.0;
+
+	for (int d = 1; d < M; ++d) {
+		int now = d % 2;
+		int tomorrow = (d + 1) % 2;
+
+		/* init tommorow */
+		for (int j = 1; j <= N; ++j) {
+			for (int k = 0; k <= N; ++k) {
+				ex[tomorrow].p[j][k] = 0.0;
+			}
+		}
+
+		/* find d++ day ; ali/noa travel city */
+		for (int j = 1; j <= N; ++j) {
+			for (int k = 1; k <= N; ++k) {
+				if (ex[now].p[j][k] > 0.0) {
+					/* ali: -> j */
+					ali_path.clear();
+					noa_path.clear();
+
+					for (int z = 0; z < link[j].size(); ++z) {
+						path ali;
+						ali.next = link[j][z];
+						ali.p = ex[now].p[j][k] * f[j][ali.next];
+						printf("day %d: ali %d -> %d : %.03f\n", d+1, j, ali.next, ali.p);
+						ali_path.push_back(ali);
 					}
 
-					result_f += ap * np;
+					/* noa: -> k */
+					for (int z = 0; z < link[k].size(); ++z) {
+						path noa;
+						noa.next = link[k][z];
+						noa.p = ex[now].p[j][k] * f[k][noa.next];
+						printf("day %d: noa %d -> %d : %.03f\n", d+1, k, noa.next, noa.p);
+						noa_path.push_back(noa);
+					}
+
+					for (int z1 = 0; z1 < ali_path.size(); ++z1) {
+						path& ali = ali_path[z1];
+						for (int z2 = 0; z2 < noa_path.size(); ++z2) {
+							path& noa = noa_path[z2];
+
+							if (ali.next == noa.next) {
+								/* met !!! */
+								printf("day %d: met (%d) -- (ali: %.03f, noa: %.03f) = %.03f\n", d+1, ali.next, ali.p, noa.p, ali.p * noa.p);
+								result_f += ali.p * noa.p;
+							} else {
+								/* not met, go continue */
+								printf("day %d: go continue -- (%d, %d, %.03f)\n", d+1, ali.next, noa.next, ali.p * noa.p);
+								ex[tomorrow].p[ali.next][noa.next] = ali.p * noa.p;
+							}
+						}
+					}
 				}
 			}
 		}
@@ -392,8 +490,8 @@ double t4()
 
 int main()
 {
-	freopen("c:\\temp\\sample2.txt", "r", stdin);
-
+	freopen("data\\match_travel2.txt", "r", stdin);
+	freopen("result.txt", "w", stdout);
 	scanf("%d\n", &CASE);
 
 	for (int t = 1; t <= CASE; ++t) {
@@ -405,7 +503,7 @@ int main()
 
 			link[i].clear();
 		}
-			
+
 #if 0
 		for (int i = 0; i <= MAX_N; ++i)
 			for (int j = 0; i <= MAX_N; ++i)
@@ -421,8 +519,10 @@ int main()
 
 			scanf("%d %d %lf\n", &n1, &n2, &f0);
 
-			f[n1][n2] = f0;
-			link[n1].push_back(n2);
+			if (f0 > 0.0) {
+				f[n1][n2] = f0;
+				link[n1].push_back(n2);
+			}
 		}
 
 #if 0
@@ -435,9 +535,9 @@ int main()
 		}
 #endif
 
-		// 		
-		double result_f = t4();
-		
+		//
+		double result_f = t5();
+
 		printf("#%d %.03lf\n", t, result_f);
 	}
 
