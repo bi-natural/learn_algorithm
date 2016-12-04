@@ -1,0 +1,20 @@
+From:
+    https://www.topcoder.com/community/data-science/data-science-tutorials/binary-indexed-trees/
+
+Codes:
+    https://kartikkukreja.wordpress.com/2013/05/11/bit-fenwick-tree-data-structure-c-implementation/
+    https://github.com/kartikkukreja/blog-codes/blob/master/src/BIT%20or%20Fenwick%20Tree%20Data%20Structure.cpp
+
+    A BIT (Binary Indexed Tree) or Fenwick Tree is a data structure providing efficient methods for calculation and manipulation of the prefix sums of a table of values.
+
+
+    It supports the following operations :
+
+    SUM(1…b): Cumulative sum of elements in the range [1…b]
+    SUM(a…b): Cumulative sum of elements in the range [a…b]
+    UPDATE(k, v): Update kth element by an amount v ( v can be +ve or -ve)
+    SCALE_UP(c): Multiply all elements by an amount c
+    SCALE_DOWN(c): Divide all elements by an amount c
+    Space Complexity: O(N) for N elements
+
+    Time Complexity: O(log N) for SUM and UPDATE and O(N) for SCALE, where N is the number of elements

@@ -11,7 +11,7 @@ At the command prompt, change to the Visual C++ installation directory. (The loc
 cd "\Program Files (x86)\Microsoft Visual Studio 14.0\VC"
 To configure this Command Prompt window for 32-bit x86 command-line builds, at the command prompt, enter:
 
-vcvarsall x86
+"\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall" x86
 
 
 compile.
