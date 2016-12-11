@@ -46,6 +46,7 @@ void dump()
 
 int main()
 {
+
     freopen("bit2.txt", "r", stdin);
     scanf("%d %d", &n, &q);
     arr[0] = 0;

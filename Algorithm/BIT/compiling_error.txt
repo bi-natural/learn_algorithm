@@ -1,0 +1,4 @@
+x86�� Microsoft (R) C/C++ ����ȭ �����Ϸ� ���� 19.00.23026
+Copyright (c) Microsoft Corporation. All rights reserved.
+
+cl : ������ warning D9035 : 'o' �ɼ��� �� �̻� �������� �����Ƿ� ���� ���������� ���ŵ� �����Դϴ�.
