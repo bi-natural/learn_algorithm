@@ -1,0 +1,159 @@
+모든 nlgn들의 영웅(?) 같은 priority_queue
+
+존재 그 자체로 멋지지만 정말 멋지게 쓰기 위해서는 제대로 활용할 줄 알아야 할 것이다.
+
+
+1.
+
+Colored By Color Scripter™
+
+#include <cstdio>
+#include <queue>
+using namespace std;
+
+priority_queue<int> pq;
+
+int main(){
+    pq.push(3);
+    pq.push(1);
+    pq.push(4);
+    pq.push(1);
+    pq.push(5);
+    pq.push(9);
+    while (!pq.empty()) {
+        printf("%d",pq.top());
+        pq.pop();
+    }
+}
+출력 결과는 954311 이다.
+
+
+2.
+
+Colored By Color Scripter™
+
+#include <cstdio>
+#include <queue>
+using namespace std;
+
+priority_queue<int,vector<int>,less<int> > pq;
+
+int main(){
+    pq.push(3);
+    pq.push(1);
+    pq.push(4);
+    pq.push(1);
+    pq.push(5);
+    pq.push(9);
+    while (!pq.empty()) {
+        printf("%d",pq.top());
+        pq.pop();
+    }
+}
+아까와 완전히 동일한 코드이다.
+
+우선순위 큐는 실제로는 priority_queue<자료형, 구현체, 비교 연산자>로 정의하는 것을 알 수 있다.
+
+ * 자료형은 int, double, 선언한 클래스 등등..
+
+ * 구현체는 기본적으로 vector<자료형>으로 정의된다. 이말인 즉슨 우리가 쓰는 priority_queue가 실제로는 vector 위에서 돌아가고 있다는 것이다. vector가 아니더라도 deque<자료형> 등을 넣어도 잘 돌아간다. stl에서 힙을 구현하기에 충분한 자료구조면 다 된다. (random access iterator가 지원되어야 할듯) 근데 굳이 데큐 쓸 이유는 없을 거 같으니 기본값인 vector로 쓰자. 숏코더라면 그냥 priority queue를 쓰지 말자 참고로, 굳이 vector나 deque를 include하지 않아도 잘 돌아간다.
+
+ * 비교 연산자는 기본적으로 less<자료형>으로 정의된다. 저건 stl에서 기본으로 제공하는 비교 연산자 클래스인데 이걸 넣으면 큰 놈부터 나온다. greater<자료형>을 넣으면 작은 놈부터 나오며 출력 결과는 113459가 된다.
+
+이때부턴 std::을 일일히 붙이면 가독성이 많이 떨어지니. using namespace std를 쓰자.
+
+또한, less<int>> 식으로 하면 일부 컴파일러는 이를 비트 연산으로 오해한다고 한다. xcode llvm은 잘 해주는 거 같은데 어쨌든 띄어쓰는 습관을 들이자.
+
+
+
+3.
+
+Colored By Color Scripter™
+
+#include <cstdio>
+#include <queue>
+using namespace std;
+
+struct a{
+    int start;
+    int end;
+    int value;
+};
+
+bool operator<(a t, a u){
+    return t.value < u.value;
+}
+
+priority_queue<a> pq;
+
+위에서도 얘기했듯이 구조체나 클래스도 비교 연산자를 잘 설정했으면 잘 들어간다.
+pair<int,int> 이런것도 물론 잘 들어간다. 얜 비교 연산자가 정의되어 있으니 더 좋다.
+
+비교 연산자를 overloading하려면 < 연산자를 overloading하면 된다. > 연산자는 오버로딩해도 priority_queue가 인식을 못하는 걸로... 알고 있다. 아마.
+
+
+
+이 소스는 value가 큰 놈부터 나오는 소스이다.
+
+작은 놈부터 나오게 하려면 -
+
+ * 1. operator< 구현체의 부호를 t.value > u.value로 바꾼다.
+
+ * 2. priority_queue<a,vector<a>,greater<a> > 식으로 priority_queue를 정의한다.
+
+
+
+등의 방법이 있다.
+
+
+
+4.
+
+less<int> greater<int> 등 만들어준 연산자 클래스를 쓸 수도 있는데 우리가 만들면 더 좋을 거 같다.
+
+Colored By Color Scripter™
+
+#include <cstdio>
+#include <queue>
+using namespace std;
+
+struct a{
+    int start;
+    int end;
+    int value;
+};
+
+struct cmp{
+    bool operator()(a t, a u){
+        return t.value < u.value;
+    }
+};
+
+priority_queue<a,vector<a>,cmp> pq;
+cmp 클래스를 만들어서 연산자를 저렇게 만들고, priority_queue에 overload하면 저게 less<int> 구실을 대신 해준다.
+
+여러 연산자를 필요할때마다 오버로딩할 수 있어서 유용한 테크닉이다.
+
+
+
+
+
+priority_queue vs. set(multiset)
+================================
+
+std::priority_queue allows to do the following:
+
+Insert an element O(log n)
+
+    Get the smallest element O(1)
+    Erase the smallest element O(log n)
+    while std::set has more possibilities:
+
+Insert any element O(log n) and the constant is greater than in std::priority_queue
+
+    Find any element O(log n)
+    Find an element, >= than the one your are looking for O(log n) (lower_bound)
+    Erase any element O(log n)
+    Move to previous/next element in sorted order O(1)
+    Get the smallest element O(1)
+    Get the largest element O(1)

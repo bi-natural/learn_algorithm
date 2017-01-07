@@ -7,7 +7,7 @@
 
 using namespace std;
 
-template <typename Test> 
+template <typename Test>
 void test (Test t, vector<int>& A)
 {
     const clock_t begin = clock();
@@ -18,12 +18,28 @@ void test (Test t, vector<int>& A)
 
 const int MIN = numeric_limits<int>::min();
 
+/*
+ *  sum [0..N ~ i..N]
+ */
+int n2_sum(const vector<int>& A) {
+    int N = A.size(), ret = MIN;
+
+    for (int i = 0; i < N; ++i) {
+        int sum = 0;
+        for (int j = i; j < N; ++j) {
+            sum += A[j];
+            ret = max(ret, sum);
+        }
+    }
+    return ret;
+}
+
 int devide_and_conqure(vector<int>& A, int lo, int hi) {
     if (lo == hi) return A[lo];
 
     int mid = (lo + hi) / 2;
     int left = MIN, right = MIN, sum = 0;
-    
+
     for (int i = mid; i >= lo; --i) {
         sum += A[i];
         left = max(left, sum);
@@ -45,10 +61,10 @@ void t_devide_and_conqure(vector<int>& A) {
 }
 
 
-/* 
+/*
  * maxA[0]  = A[0]
  *   :
- * maxAt[i] = max( 0, maxAt[i]) + A[i] 
+ * maxAt[i] = max( 0, maxAt[i]) + A[i]
  */
 int dp(vector<int>& A) {
     int N = A.size(), ret = MIN, pSum = 0;
