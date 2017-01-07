@@ -56,13 +56,19 @@ int main(){
 
  * 자료형은 int, double, 선언한 클래스 등등..
 
- * 구현체는 기본적으로 vector<자료형>으로 정의된다. 이말인 즉슨 우리가 쓰는 priority_queue가 실제로는 vector 위에서 돌아가고 있다는 것이다. vector가 아니더라도 deque<자료형> 등을 넣어도 잘 돌아간다. stl에서 힙을 구현하기에 충분한 자료구조면 다 된다. (random access iterator가 지원되어야 할듯) 근데 굳이 데큐 쓸 이유는 없을 거 같으니 기본값인 vector로 쓰자. 숏코더라면 그냥 priority queue를 쓰지 말자 참고로, 굳이 vector나 deque를 include하지 않아도 잘 돌아간다.
+ * 구현체는 기본적으로 vector<자료형>으로 정의된다. 이말인 즉슨 우리가 쓰는 priority_queue가
+   실제로는 vector 위에서 돌아가고 있다는 것이다. vector가 아니더라도 deque<자료형> 등을 넣어도 잘 돌아간다.
+   stl에서 힙을 구현하기에 충분한 자료구조면 다 된다.
+   (random access iterator가 지원되어야 할듯) 근데 굳이 데큐 쓸 이유는 없을 거 같으니 기본값인 vector로 쓰자.
+   숏코더라면 그냥 priority queue를 쓰지 말자 참고로, 굳이 vector나 deque를 include하지 않아도 잘 돌아간다.
 
- * 비교 연산자는 기본적으로 less<자료형>으로 정의된다. 저건 stl에서 기본으로 제공하는 비교 연산자 클래스인데 이걸 넣으면 큰 놈부터 나온다. greater<자료형>을 넣으면 작은 놈부터 나오며 출력 결과는 113459가 된다.
+ * 비교 연산자는 기본적으로 less<자료형>으로 정의된다. 저건 stl에서 기본으로 제공하는 비교 연산자 클래스인데
+   이걸 넣으면 큰 놈부터 나온다. greater<자료형>을 넣으면 작은 놈부터 나오며 출력 결과는 113459가 된다.
 
 이때부턴 std::을 일일히 붙이면 가독성이 많이 떨어지니. using namespace std를 쓰자.
 
-또한, less<int>> 식으로 하면 일부 컴파일러는 이를 비트 연산으로 오해한다고 한다. xcode llvm은 잘 해주는 거 같은데 어쨌든 띄어쓰는 습관을 들이자.
+또한, less<int>> 식으로 하면 일부 컴파일러는 이를 비트 연산으로 오해한다고 한다.
+xcode llvm은 잘 해주는 거 같은데 어쨌든 띄어쓰는 습관을 들이자.
 
 
 
@@ -89,7 +95,8 @@ priority_queue<a> pq;
 위에서도 얘기했듯이 구조체나 클래스도 비교 연산자를 잘 설정했으면 잘 들어간다.
 pair<int,int> 이런것도 물론 잘 들어간다. 얜 비교 연산자가 정의되어 있으니 더 좋다.
 
-비교 연산자를 overloading하려면 < 연산자를 overloading하면 된다. > 연산자는 오버로딩해도 priority_queue가 인식을 못하는 걸로... 알고 있다. 아마.
+비교 연산자를 overloading하려면 < 연산자를 overloading하면 된다. >
+연산자는 오버로딩해도 priority_queue가 인식을 못하는 걸로... 알고 있다. 아마.
 
 
 
@@ -130,7 +137,8 @@ struct cmp{
 };
 
 priority_queue<a,vector<a>,cmp> pq;
-cmp 클래스를 만들어서 연산자를 저렇게 만들고, priority_queue에 overload하면 저게 less<int> 구실을 대신 해준다.
+cmp 클래스를 만들어서 연산자를 저렇게 만들고, priority_queue에 overload하면 저게 less<int> 구실을
+대신 해준다.
 
 여러 연산자를 필요할때마다 오버로딩할 수 있어서 유용한 테크닉이다.
 
