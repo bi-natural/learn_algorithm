@@ -380,20 +380,23 @@ double t4()
 		/* calculate meet_possibility */
 		printf("day %d\n", d+1);
 		for (int j = 1; j <= N; ++j) {
-			if (ali_p[tomorrow].val[j][0] > 0.0 && noa_p[tomorrow].val[j][0] > 0.0) {
-				for (int k = 1; k <= N; ++k) {
-					double ap = ali_p[tomorrow].val[j][k];
+			//if (ali_p[tomorrow].val[j][0] > 0.0 && noa_p[tomorrow].val[j][0] > 0.0) {
+			double ap = ali_p[tomorrow].val[j][0];
+			double np = noa_p[tomorrow].val[j][0];
 
-					if (ap > 0.0) {
-						for (int z = 1; z <= N; ++z) {
-							if (z != k && noa_p[tomorrow].val[j][z] > 0.0) {
-								printf("-- matched at %d : ali (%d) - noa (%d) = %.03f\n", j, k, z, ap * noa_p[tomorrow].val[j][z]);
-								result_f += (ap * noa_p[tomorrow].val[j][z]);
-							}
+			result_f += ap * np;
+#if 0
+			if (ali_p[tomorrow].val[j][0] > 0.0) {
+				for (int k = 1; k <= N; ++k) {
+					for (int z = 1; z <= N; ++z) {
+						if (z != k && noa_p[tomorrow].val[j][z] > 0.0) {
+							printf("-- matched at %d : ali (%d) - noa (%d) = %.03f\n", j, k, z, ap * noa_p[tomorrow].val[j][z]);
+							result_f += (ap * noa_p[tomorrow].val[j][z]);
 						}
 					}
 				}
 			}
+#endif
 		}
 	}
 
@@ -487,10 +490,267 @@ double t5()
 
 		for (int j = 1; j <= N; ++j) {
 			if (ex[tomorrow].p[j][j] > 0.0) {
+					printf("  day %d: met_stop -- (%d, %d, %.03f) !!\n", d+1, j, j, ex[tomorrow].p[j][j]);
+					result_f += ex[tomorrow].p[j][j];
+					ex[tomorrow].p[j][j] = 0.0;
+			}
+		}
+	}
+
+	return result_f;
+}
+
+
+double ali_move[MAX_N+1][MAX_N+1];
+double noa_move[MAX_N+1][MAX_N+1];
+
+vector<int> prev_meet_cities;
+
+double t6()
+{
+	/* matching possilbity */
+	double result_f = 0.0;
+
+	for (int j = 1; j <= N; ++j) {
+		for (int k = 1; k <= N; ++k) {
+			ex[1].p[j][k] = 0.0;
+		}
+	}
+
+	ex[1].p[1][N] = 1.0;
+	ex[1].p[1][0] = 1.0;
+	ex[1].p[0][N] = 1.0;
+
+	for (int d = 1; d < M; ++d) {
+		int now = d % 2;
+		int tomorrow = (d + 1) % 2;
+
+		/* init tommorow */
+		for (int j = 0; j <= N; ++j) {
+			for (int k = 0; k <= N; ++k) {
+				ex[tomorrow].p[j][k] = 0.0;
+				ali_move[j][k] = 0.0;
+				noa_move[j][k] = 0.0;
+			}
+		}
+
+		/* find d++ day ; ali/noa travel city */
+		for (int j = 1; j <= N; ++j) {
+			for (int k = 1; k <= N; ++k) {
+				if (ex[now].p[j][k] > 0.0) {
+					/* ali: -> j */
+					bool ali_pre_meet = false;
+					bool noa_pre_meet = false;
+
+					for (int z = 0; z < prev_meet_cities.size(); ++z) {
+						if (prev_meet_cities[z] == j)
+							ali_pre_meet = true;
+						if (prev_meet_cities[z] == k)
+							noa_pre_meet = true;
+					}
+
+					if (! ali_pre_meet) {
+						for (int z = 0; z < link[j].size(); ++z) {
+							path ali;
+							ali.next = link[j][z];
+							ali.p = ex[now].p[j][k] * f[j][ali.next];
+							printf("day %d: ali %d -> %d : %.03f\n", d+1, j, ali.next, ali.p);
+							ali_move[j][ali.next] += ali.p;
+							ali_move[0][ali.next] += ali.p;
+							// ali_path.push_back(ali);
+						}
+
+					}
+
+					/* noa: -> k */
+					if (! noa_pre_meet) {
+						for (int z = 0; z < link[k].size(); ++z) {
+							path noa;
+							noa.next = link[k][z];
+							noa.p = ex[now].p[j][k] * f[k][noa.next];
+							printf("day %d: noa %d -> %d : %.03f\n", d+1, k, noa.next, noa.p);
+							noa_move[k][noa.next] += noa.p;
+							noa_move[0][noa.next] += noa.p;
+							//noa_path.push_back(noa);
+						}
+					}
+
+#if 0
+					for (int z1 = 0; z1 < ali_path.size(); ++z1) {
+						path& ali = ali_path[z1];
+						for (int z2 = 0; z2 < noa_path.size(); ++z2) {
+							path& noa = noa_path[z2];
+
+							if (ali.next == noa.next) {
+								/* met !!! */
+								ex[tomorrow].p[ali.next][noa.next] += ali.p * noa.p;
+								//printf("day %d: met (%d) -- (ali: %.03f, noa: %.03f) = %.03f\n", d+1, ali.next, ali.p, noa.p, ali.p * noa.p);
+								//result_f += ali.p * noa.p;
+							} else {
+								/* not met, go continue */
+								ex[tomorrow].p[ali.next][noa.next] += ali.p * noa.p;
+								printf("  day %d: continue -- (%d, %d, %.03f)\n", d+1, ali.next, noa.next, ex[tomorrow].p[ali.next][noa.next]);
+							}
+						}
+					}
+#endif
+				}
+			}
+		}
+
+		prev_meet_cities.clear();
+
+		for (int j = 1; j <= N; ++j) {
+			for (int k = 1; k <= N; ++k) {
+				if (ali_move[0][j] > 0.0 && noa_move[0][k] > 0.0) {
+					if (j == k) {
+						printf("  day %d: met_stop -- (%d, %d, %.03f) !! (ali: %.03f, noa: %.03f)\n", d+1, j, k, ali_move[0][j] * noa_move[0][k], ali_move[0][j], noa_move[0][k]);
+						result_f += ali_move[0][j] * noa_move[0][k];
+						prev_meet_cities.push_back(j);
+					}
+					else {
+						ex[tomorrow].p[j][k] += ali_move[0][j] * noa_move[0][k];
+						printf("  day %d: continue -- (%d, %d, %.03f)\n", d+1, j, k, ex[tomorrow].p[j][k]);
+					}
+				}
+			}
+		}
+#if 0
+			if (ex[tomorrow].p[j][j] > 0.0) {
 				printf("  day %d: met_stop -- (%d, %d, %.03f) !!\n", d+1, j, j, ex[tomorrow].p[j][j]);
 				result_f += ex[tomorrow].p[j][j];
 				ex[tomorrow].p[j][j] = 0.0;
 			}
+		}
+#endif
+
+	}
+
+	return result_f;
+}
+
+struct record {
+	double ali, noa;
+};
+
+struct track {
+	record r[MAX_N+1][MAX_N+1];
+};
+
+track tracks[2];
+
+double t7()
+{
+	/* matching possilbity */
+	double result_f = 0.0;
+
+	for (int i = 0; i <= N; ++i) {
+		for (int j = 0; j <= N; ++j) {
+			tracks[1].r[i][j].ali = 0.0;
+			tracks[1].r[i][j].noa = 0.0;
+		}
+	}
+	tracks[1].r[1][N].ali = 1.0;
+	tracks[1].r[1][N].noa = 1.0;
+
+	for (int d = 1; d < M; ++d) {
+		int now = d % 2;
+		int tomorrow = (d + 1) % 2;
+
+		/* init tommorow */
+		for (int j = 0; j <= N; ++j) {
+			for (int k = 0; k <= N; ++k) {
+				tracks[tomorrow].r[j][k].ali = 0.0;
+				tracks[tomorrow].r[j][k].noa = 0.0;
+				ali_move[j][k] = 0.0;
+				noa_move[j][k] = 0.0;
+			}
+		}
+
+		/* find d++ day ; ali/noa travel city */
+		for (int j = 1; j <= N; ++j) {
+			for (int k = 1; k <= N; ++k) {
+				if (tracks[now].r[j][k].ali > 0.0) {
+					for (int z = 0; z < link[j].size(); ++z) {
+						int next = link[j][z];
+						double p = tracks[now].r[j][k].ali * f[j][next];
+
+						ali_move[j][next] += p;
+						ali_move[0][next] += p;
+
+						printf("day %d: ali %d -> %d : %.03f\n", d+1, j, next, p);
+					}
+				}
+
+				if (tracks[now].r[j][k].noa > 0.0) {
+					for (int z = 0; z < link[k].size(); ++z) {
+						int next = link[k][z];
+						double p = tracks[now].r[j][k].noa * f[k][next];
+
+						noa_move[k][next] += p;
+						noa_move[0][next] += p;
+
+						printf("day %d: noa %d -> %d : %.03f\n", d+1, k, next, p);
+					}
+				}
+			}
+		}
+
+		/* classify */
+		for (int j = 1; j <= N; ++j) {
+			for (int k = 1; k <= N; ++k) {
+				if (ali_move[0][j] > 0.0 && noa_move[0][k] > 0.0) {
+					if (j == k) {
+						printf(" --- meet at  (%d, %d, %.03f) !!! \n", j, k, ali_move[0][j] * noa_move[0][k]);
+						result_f += ali_move[0][j] * noa_move[0][k];
+					} else {
+						printf(" --- continue (%d, %d, %.03f, %.03f)\n", j, k, ali_move[0][j], noa_move[0][k]);
+						tracks[tomorrow].r[j][k].ali = ali_move[0][j];
+						tracks[tomorrow].r[j][k].noa = noa_move[0][k];
+					}
+				}
+			}
+		}
+	}
+
+	return result_f;
+}
+
+double t8(int day, int ali_city, double ali_p, int noa_city, double noa_p)
+{
+	if (day > M) return 0.0;
+	if (ali_city == noa_city) return ali_p * noa_p;
+
+	double result_f = 0.0;
+	path ali_nexts[3];
+	path noa_nexts[3];
+	int  ali_size = 0;
+	int  noa_size = 0;
+
+
+	for (int z = 0; z < link[ali_city].size(); ++z) {
+		path& ali = ali_nexts[ali_size];
+
+		ali.next = link[ali_city][z];
+		ali.p = ali_p * f[ali_city][ali.next];
+		//printf("day %d: ali %d -> %d : %.03f\n", day, ali_city, ali.next, ali.p);
+		ali_size++;
+	}
+
+	/* noa: -> k */
+	for (int z = 0; z < link[noa_city].size(); ++z) {
+		path& noa = noa_nexts[noa_size];
+
+		noa.next = link[noa_city][z];
+		noa.p = noa_p * f[noa_city][noa.next];
+		//printf("day %d: noa %d -> %d : %.03f\n", day, noa_city, noa.next, noa.p);
+		noa_size++;
+	}
+
+	/* compare each next cities */
+	for (int j = 0; j < ali_size; ++j) {
+		for (int k = 0; k < noa_size; ++k ) {
+			result_f += t8(day + 1, ali_nexts[j].next, ali_nexts[j].p, noa_nexts[k].next, noa_nexts[k].p);
 		}
 	}
 
@@ -499,7 +759,7 @@ double t5()
 
 int main()
 {
-	freopen("data\\match_travel2.txt", "r", stdin);
+	freopen("data/match_travel1.txt", "r", stdin);
 	freopen("result.txt", "w", stdout);
 	scanf("%d\n", &CASE);
 
@@ -545,7 +805,8 @@ int main()
 #endif
 
 		//
-		double result_f = t5();
+		// double result_f = t7();
+		double result_f = t8(1, 1, 1.0, N, 1.0);
 
 		printf("#%d %.03lf\n", t, result_f);
 	}
