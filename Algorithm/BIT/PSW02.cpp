@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -69,7 +70,7 @@ vector<int> healthboy()
 		orgSum += ins[i] * bit.sum(i);
 	}
 	printf("debug> original sum = %d\n", orgSum);
-	
+
 	ret.push_back(orgSum);
 
 	int delta = orgSum;
@@ -80,24 +81,42 @@ vector<int> healthboy()
 		delta -= area(j, i);
 		j = i+1;
 	}
+	ret.push_back(N);
+
+	printf("Current Delta = %d\n", delta);
 
 	int reduced = 0;
 
-	for (int k = 1; k < K; ++k) {
+	for (int k = 1; k <= K; ++k) {
 		printf(" k = %d\n", k);
+
+		bool changed = false;
+		int LastJ;
+		int LastLB, LB;
+		int MaxDiff = 0;
+		int LastRT, RT = 0;
+
 		for (int i = ret[k], j = ret[k + 1] - 1; i <= j; --j) {
-			int lu = bit.sum(i + 1, j) * bit.sum(j+1, ret[k+1]);
-			int rd = bit.sum(j + 1, ret[k + 1]) * bit.sum(ret[k + 1]+1, ret[k + 2]);
+			LB  = bit.sum(i + 1, j) * bit.sum(j+1, ret[k+1]);
+			RT  = ins[ret[k+1]] * bit.sum(j + 1, ret[k + 2] - 1);
 
-			printf(" > LU = (%d, %d) * (%d, %d) = %d\n", i + 1, j, j + 1, ret[k + 1], lu);
-			printf(" > RD = (%d, %d) * (%d, %d) = %d\n", j + 1, ret[k + 1], ret[k + 1] + 1, ret[k + 2], rd);
+			printf(" > LB = (%d, %d) * (%d, %d) = %d\n", i + 1, j, j + 1, ret[k + 1], LB);
+			printf(" > RT = ins[%d]=%d * sum(%d, %d)=%d = %d\n", ret[k+1], ins[ret[k+1]], j + 1, ret[k + 2]-1, bit.sum(j + 1, ret[k + 2]-1), RT);
 
-			if (lu >= rd) {
-				printf("reduced...\n");
+			if ((LB >= RT) && (MaxDiff <= (LB-RT))) {
+				MaxDiff = max(MaxDiff, LB - RT);
+				printf("reduced!... again  CONT...  ret[%d] = %d  (Diff = %d, S = %d)\n", k+1, j, LB - RT, delta - MaxDiff);
+				LastJ = j;
+				LastLB = LB;
+				LastRT = RT;
 			}
 			else
 			{
-				printf("increased...\n");
+				delta -= MaxDiff;
+				ret[k+1] = LastJ;
+				changed = true;
+				printf("increased.  BREAK.  ret[%d] = %d  (NEW SUM = %d)\n", k+1, LastJ, delta);
+				break;
 			}
 		}
 	}
@@ -106,10 +125,78 @@ vector<int> healthboy()
 	return ret;
 }
 
+vector<int> healthboy2()
+{
+	vector<int> ret;
+	vector<int> vec;
+
+	int orgSum = 0;
+	for (int i = 1; i <= N; ++i) {
+		orgSum += ins[i] * bit.sum(i);
+	}
+	printf("debug> original sum = %d\n", orgSum);
+
+	ret.push_back(orgSum);
+
+	int delta = orgSum;
+
+	vec.push_back(0);
+	for (int i = N-K, j = 1; i < N; ++i) {
+		vec.push_back(i);
+		delta -= area(j, i);
+		j = i+1;
+	}
+	vec.push_back(N);
+
+	printf("Current Delta = %d\n", delta);
+
+	int reduced = 0;
+
+	for (int k = 0; k < K; ++k) {
+		printf(" k = %d\n", k);
+
+		bool changed = false;
+		int LastJ;
+		int LastLB, LB;
+		int MaxDiff = 0;
+		int LastRT, RT = 0;
+
+		for (int i = vec[k], j = vec[k + 1] - 1; i <= j; --j) {
+			LB  = bit.sum(i + 1, j) * bit.sum(j+1, vec[k+1]);
+			RT  = ins[vec[k+1]] * bit.sum(j + 1, vec[k + 2] - 1);
+
+			printf(" > LB = (%d, %d) * (%d, %d) = %d\n", i + 1, j, j + 1, vec[k + 1], LB);
+			printf(" > RT = ins[%d]=%d * sum(%d, %d)=%d = %d\n", vec[k+1], ins[vec[k+1]], j + 1, vec[k + 2]-1, bit.sum(j + 1, vec[k + 2]-1), RT);
+
+			if ((LB >= RT) && (MaxDiff <= (LB-RT))) {
+				MaxDiff = max(MaxDiff, LB - RT);
+				printf("reduced!... again  CONT...  vec[%d] = %d  (Diff = %d, S = %d)\n", k+1, j, LB - RT, delta - MaxDiff);
+				LastJ = j;
+				LastLB = LB;
+				LastRT = RT;
+			}
+			else
+			{
+				delta -= MaxDiff;
+				vec[k+1] = LastJ;
+				changed = true;
+				printf("increased.  BREAK.  vec[%d] = %d  (NEW SUM = %d)\n", k+1, LastJ, delta);
+				break;
+			}
+		}
+	}
+
+	ret.push_back(delta);
+	for (int i = 0; i < vec.size(); ++i)
+		ret.push_back(vec[i]);
+
+	return ret;
+}
+
 int main()
 {
-	freopen("C:\\temp\\input1.txt", "r", stdin);
-	freopen("C:\\temp\\result.txt", "w", stdout);
+	freopen("sw12.txt", "r", stdin);
+	freopen("result.txt", "w", stdout);
 	scanf("%d", &CASE);
 	for (int t = 1; t <= CASE; ++t) {
 		scanf("%d %d", &N, &K);
@@ -125,7 +212,7 @@ int main()
 
 		vector<int> result = healthboy();
 		printf("#%d %d", t, result[0]);
-		for (int i = 1; i < result.size(); ++i) {
+		for (int i = 2; i < result.size() - 1; ++i) {
 			printf(" %d", result[i]);
 		}
 		printf("\n");
