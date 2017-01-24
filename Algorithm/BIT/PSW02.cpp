@@ -1,5 +1,6 @@
 /* Health Boy */
 #define _CRT_SECURE_NO_WARNINGS
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -10,211 +11,194 @@ using namespace std;
 
 #define LSB(s)	((s)&(-s))
 
+#define DEBUG
+#define DEBUG1
+
 class BIT {
-	int *ptree, size;
+	long long *ptree;
+	int size;
 
 public:
 	BIT(int n) {
 		size = n;
-		ptree = new int[n + 1];
+		ptree = new long long[n + 1];
 		init();
 	}
 	~BIT() { delete[] ptree; }
 	void init() {
-		memset(ptree, 0, (size + 1)*sizeof(int));
+		memset(ptree, 0, (size + 1)*sizeof(long long));
 	}
-	int sum(int b) {
-		int sum = 0;
+	long long sum(int b) {
+		long long sum = 0;
 		for (; b; b -= LSB(b)) sum += ptree[b];
 		return sum;
 	}
-	int sum(int a, int b) {
+	long long sum(int a, int b) {
 		if (a == 1)
 			return sum(b);
 		else
 			return sum(b) - sum(a - 1);
 	}
-	void add(int k, int v) {
+	void add(int k, long long v) {
 		for (; k <= size; k += LSB(k)) ptree[k] += v;
 	}
 	void dump_sum(char tag[], int s, int d) {
 		printf("dump> %s :", tag);
 		for (int i = s; i <= d; ++i)
-			printf(" %d", sum(i));
+			printf(" %lld", sum(i));
 		printf("\n");
 	}
 };
 
-const int MAX_N = 100;
+const int MAX_N = 101;
 
 int CASE, N, K;
 int ins[MAX_N];
 BIT bit(MAX_N + 1);
 
-int area(int s, int d)
+long long area(int s, int d)
 {
-	int a = bit.sum(s, d);
-	int b = bit.sum(d + 1, N);
+	long long a = bit.sum(s, d);
+	long long b = bit.sum(d + 1, N);
 
-	printf(" -- (%d, %d) = %d\n", b, a, a*b);
+#ifdef DEBUG
+	printf(" -- (%lld, %lld) = %d\n", b, a, a*b);
+#endif
 	return a * b;
-	//return bit.sum(s, d) * bit.sum(s + 1, N-1);
 }
 
-vector<int> healthboy()
+bool optimize1(vector<long long>& v)
 {
-	vector<int> ret;
-
-	int orgSum = 0;
-	for (int i = 1; i <= N; ++i) {
-		orgSum += ins[i] * bit.sum(i);
-	}
-	printf("debug> original sum = %d\n", orgSum);
-
-	ret.push_back(orgSum);
-
-	int delta = orgSum;
-
-	ret.push_back(0);
-	for (int i = N-K, j = 1; i < N; ++i) {
-		ret.push_back(i);
-		delta -= area(j, i);
-		j = i+1;
-	}
-	ret.push_back(N);
-
-	printf("Current Delta = %d\n", delta);
-
 	int reduced = 0;
+	long long gap = v[0];
+
+#ifdef DEBUG
+	printf("Current Answer = %lld, K = %d\n", gap, K);
+	printf("Current = ");
+	for (int k = 1; k <= K; ++k) {
+		printf("[%d - %d] ", (int) v[k] + 1, (int) v[k + 1]);
+	}
+	printf("\n");
+#endif
 
 	for (int k = 1; k <= K; ++k) {
-		printf(" k = %d\n", k);
+#ifdef DEBUG
+		printf("> k = %d .. %d [next = %d]\n", (int) v[k] + 1, (int) v[k + 1], (int) v[k+2]-1);
+#endif
+		long long LastJ = v[k + 1];
+		long long MaxDiff = 0;
 
-		bool changed = false;
-		int LastJ;
-		int LastLB, LB;
-		int MaxDiff = 0;
-		int LastRT, RT = 0;
+		for (int i = (int) v[k] + 1, j = (int) v[k + 1] - 1; i < j; --j) {
+			long long LB = bit.sum(i, j) * bit.sum(j + 1, (int) v[k + 1]);
+			long long RT = bit.sum((int) v[k + 1] + 1, (int) v[k + 2]) * bit.sum(j + 1, (int) v[k + 2] - 1);
 
-		for (int i = ret[k], j = ret[k + 1] - 1; i <= j; --j) {
-			LB  = bit.sum(i + 1, j) * bit.sum(j+1, ret[k+1]);
-			RT  = ins[ret[k+1]] * bit.sum(j + 1, ret[k + 2] - 1);
-
-			printf(" > LB = (%d, %d) * (%d, %d) = %d\n", i + 1, j, j + 1, ret[k + 1], LB);
-			printf(" > RT = ins[%d]=%d * sum(%d, %d)=%d = %d\n", ret[k+1], ins[ret[k+1]], j + 1, ret[k + 2]-1, bit.sum(j + 1, ret[k + 2]-1), RT);
-
-			if ((LB >= RT) && (MaxDiff <= (LB-RT))) {
+#ifdef DEBUG
+			printf(" > LB = sum(%d, %d) * (%d, %d) = %lld\n", i, j, j + 1, (int) v[k + 1], LB);
+			printf(" > RT = sum(%d, %d)]=%lld * sum(%d, %d)=%lld = %lld\n", (int) v[k + 1] + 1, (int) v[k + 2], bit.sum((int)v[k + 1] + 1, (int)v[k + 2]), j + 1, (int)v[k + 2] - 1, bit.sum(j + 1, (int)v[k + 2] - 1), RT);
+#endif
+			if ((LB >= RT) && (MaxDiff <= (LB - RT))) {
+				reduced++;
 				MaxDiff = max(MaxDiff, LB - RT);
-				printf("reduced!... again  CONT...  ret[%d] = %d  (Diff = %d, S = %d)\n", k+1, j, LB - RT, delta - MaxDiff);
-				LastJ = j;
-				LastLB = LB;
-				LastRT = RT;
+#ifdef DEBUG
+				printf("reduced!... again  CONT...  v[%d] = %d  (Diff = %lld, Current = %lld, Expected = %lld)\n", k + 1, j, LB - RT, gap, gap - MaxDiff);
+#endif
+				LastJ = (long long) j;
 			}
 			else
 			{
-				delta -= MaxDiff;
-				ret[k+1] = LastJ;
-				changed = true;
-				printf("increased.  BREAK.  ret[%d] = %d  (NEW SUM = %d)\n", k+1, LastJ, delta);
 				break;
 			}
 		}
+
+		gap -= MaxDiff;
+		v[k + 1] = LastJ;
+#ifdef DEBUG
+		if (reduced > 0)
+			printf("REDUCED.. v[%d] = %d  (NEW SUM = %lld)\n", k + 1, (int) LastJ, gap);
+#endif
 	}
 
-	ret[0] = delta;
-	return ret;
+	v[0] = gap;
+
+	return (reduced > 0);
 }
 
-vector<int> healthboy2()
+vector<long long> healthboy2()
 {
-	vector<int> ret;
-	vector<int> vec;
+	vector<long long> ret;
 
-	int orgSum = 0;
+	long long initSum = 0;
 	for (int i = 1; i <= N; ++i) {
-		orgSum += ins[i] * bit.sum(i);
-	}
-	printf("debug> original sum = %d\n", orgSum);
-
-	ret.push_back(orgSum);
-
-	int delta = orgSum;
-
-	vec.push_back(0);
-	for (int i = N-K, j = 1; i < N; ++i) {
-		vec.push_back(i);
-		delta -= area(j, i);
-		j = i+1;
-	}
-	vec.push_back(N);
-
-	printf("Current Delta = %d\n", delta);
-
-	int reduced = 0;
-
-	for (int k = 0; k < K; ++k) {
-		printf(" k = %d\n", k);
-
-		bool changed = false;
-		int LastJ;
-		int LastLB, LB;
-		int MaxDiff = 0;
-		int LastRT, RT = 0;
-
-		for (int i = vec[k], j = vec[k + 1] - 1; i <= j; --j) {
-			LB  = bit.sum(i + 1, j) * bit.sum(j+1, vec[k+1]);
-			RT  = ins[vec[k+1]] * bit.sum(j + 1, vec[k + 2] - 1);
-
-			printf(" > LB = (%d, %d) * (%d, %d) = %d\n", i + 1, j, j + 1, vec[k + 1], LB);
-			printf(" > RT = ins[%d]=%d * sum(%d, %d)=%d = %d\n", vec[k+1], ins[vec[k+1]], j + 1, vec[k + 2]-1, bit.sum(j + 1, vec[k + 2]-1), RT);
-
-			if ((LB >= RT) && (MaxDiff <= (LB-RT))) {
-				MaxDiff = max(MaxDiff, LB - RT);
-				printf("reduced!... again  CONT...  vec[%d] = %d  (Diff = %d, S = %d)\n", k+1, j, LB - RT, delta - MaxDiff);
-				LastJ = j;
-				LastLB = LB;
-				LastRT = RT;
-			}
-			else
-			{
-				delta -= MaxDiff;
-				vec[k+1] = LastJ;
-				changed = true;
-				printf("increased.  BREAK.  vec[%d] = %d  (NEW SUM = %d)\n", k+1, LastJ, delta);
-				break;
-			}
-		}
+		initSum += ((long long) ins[i]) * ((long long) bit.sum(i));
 	}
 
-	ret.push_back(delta);
-	for (int i = 0; i < vec.size(); ++i)
-		ret.push_back(vec[i]);
+#ifdef DEBUG
+	printf("debug> initial sum = %lld\n", initSum);
+#endif
+
+	ret.push_back(initSum);
+	ret.push_back(0ll);
+
+	for (int i = N - K, j = 1; i < N; ++i) {
+		ret.push_back((long long) i);
+		initSum -= area(j, i);
+		j = i + 1;
+	}
+
+	ret.push_back((long long) N);
+	ret[0] = initSum;
+
+#ifdef DEBUG
+	printf("debug> initial reduced = %lld\n", ret[0]);
+#endif
+
+	while (optimize1(ret))
+		;
 
 	return ret;
 }
 
 int main()
 {
-	freopen("sw12.txt", "r", stdin);
-	freopen("result.txt", "w", stdout);
+#ifdef DEBUG1
+	freopen("C:\\temp\\sample_input.txt", "r", stdin);
+	//freopen("C:\\temp\\input1.txt", "r", stdin);
+	freopen("C:\\temp\\result.txt", "w", stdout);
+#endif
 	scanf("%d", &CASE);
 	for (int t = 1; t <= CASE; ++t) {
+		bool NK = false;
+
 		scanf("%d %d", &N, &K);
+
 		for (int i = 0; i < N; ++i) {
 			scanf("%d", &ins[i]);
 		}
+
 		bit.init();
 		for (int i = 1; i < N + 1; ++i) {
+#ifdef DEBUG
 			printf(" > add %d, %d\n", i, ins[i - 1]);
-			bit.add(i, ins[i - 1]);
+#endif
+			bit.add(i, (long long) ins[i - 1]);
 		}
+#ifdef DEBUG
 		bit.dump_sum("init", 1, N);
+#endif
 
-		vector<int> result = healthboy();
-		printf("#%d %d", t, result[0]);
+		NK = (N == K);
+		if (NK)
+			--K;
+
+		vector<long long> result = healthboy2();
+
+		printf("#%d %lld", t, result[0]);
 		for (int i = 2; i < result.size() - 1; ++i) {
-			printf(" %d", result[i]);
+			printf(" %lld", result[i]);
 		}
+		if (NK)
+			printf(" %d", N);
+
 		printf("\n");
 	}
 }
