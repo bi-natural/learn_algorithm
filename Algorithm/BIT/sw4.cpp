@@ -60,171 +60,96 @@ INT64 CSUM[MAX_N + 1][MAX_N + 1];
 
 int CASE, N, M;
 
-#if 0
-bool optimize1(vector<long long>& v)
-{
-	int reduced = 0;
-	long long gap = v[0];
-
-#ifdef DEBUG
-	printf("Current Answer = %lld, K = %d\n", gap, K);
-	printf("Current = ");
-	for (int k = 1; k <= K; ++k) {
-		printf("[%d - %d] ", (int)v[k] + 1, (int)v[k + 1]);
-	}
-	printf("\n");
-#endif
-
-	for (int k = 1; k <= K; ++k) {
-#ifdef DEBUG
-		printf("> k = %d .. %d [next = %d]\n", (int)v[k] + 1, (int)v[k + 1], (int)v[k + 2] - 1);
-#endif
-		long long LastJ = v[k + 1];
-		long long MaxDiff = 0;
-
-		for (int i = (int)v[k] + 1, j = (int)v[k + 1] - 1; i < j; --j) {
-			long long LB = bit.sum(i, j) * bit.sum(j + 1, (int)v[k + 1]);
-			long long RT = bit.sum((int)v[k + 1] + 1, (int)v[k + 2]) * bit.sum(j + 1, (int)v[k + 2] - 1);
-
-#ifdef DEBUG
-			printf(" > LB = sum(%d, %d) * (%d, %d) = %lld\n", i, j, j + 1, (int)v[k + 1], LB);
-			printf(" > RT = sum(%d, %d)]=%lld * sum(%d, %d)=%lld = %lld\n", (int)v[k + 1] + 1, (int)v[k + 2], bit.sum((int)v[k + 1] + 1, (int)v[k + 2]), j + 1, (int)v[k + 2] - 1, bit.sum(j + 1, (int)v[k + 2] - 1), RT);
-#endif
-			if ((LB >= RT) && (MaxDiff <= (LB - RT))) {
-				reduced++;
-				MaxDiff = max(MaxDiff, LB - RT);
-#ifdef DEBUG
-				printf("reduced!... again  CONT...  v[%d] = %d  (Diff = %lld, Current = %lld, Expected = %lld)\n", k + 1, j, LB - RT, gap, gap - MaxDiff);
-#endif
-				LastJ = (long long)j;
-			}
-			else
-			{
-				break;
-			}
-		}
-
-		gap -= MaxDiff;
-		v[k + 1] = LastJ;
-#ifdef DEBUG
-		if (reduced > 0)
-			printf("REDUCED.. v[%d] = %d  (NEW SUM = %lld)\n", k + 1, (int)LastJ, gap);
-#endif
-	}
-
-	v[0] = gap;
-
-	return (reduced > 0);
-}
-
-vector<long long> healthboy2()
-{
-	vector<long long> ret;
-
-	long long initSum = 0;
-	for (int i = 1; i <= N; ++i) {
-		initSum += ((long long)ins[i]) * ((long long)bit.sum(i));
-	}
-
-#ifdef DEBUG
-	printf("debug> initial sum = %lld\n", initSum);
-#endif
-
-	ret.push_back(initSum);
-	ret.push_back(0ll);
-
-	for (int i = N - K, j = 1; i < N; ++i) {
-		ret.push_back((long long)i);
-		initSum -= area(j, i);
-		j = i + 1;
-	}
-
-	ret.push_back((long long)N);
-	ret[0] = initSum;
-
-#ifdef DEBUG
-	printf("debug> initial reduced = %lld\n", ret[0]);
-#endif
-
-	while (optimize1(ret))
-		;
-
-	return ret;
-}
-#endif
-
 INT64 cache[11][MAX_N+1];
-INT64 currentMin;
+INT64 initMax;
+int   cacheDay[11];
 
-INT64 findMinSet(vector<int>& s, int d, int leftM)
+INT64 findMinSet(int d, int leftM)
 {
 	INT64& ref = cache[leftM][d];
 
-	if (leftM == N) {
-		currentMin = 0ll;
-		for (int i = 1; i <= N; ++i) {
-			s.push_back(i);
+	if (leftM == (N-d+1)) {
+		for (int i = leftM, k = d; i >= d; --i, --k) {
+			cacheDay[i] = N-i+1;
+			// cache[i][k] = findMinSet(k +1, i -1);
 		}
-		return currentMin;
+		return ref = 0ll;
 	}
 
-	if (ref != -1ll) { return 0ll; }
+	if (ref != -1ll) { 
+#ifdef DEBUG
+		printf("\t- findMin(%d,%d) [day=%d] --> cache : %lld\n", d, leftM, cacheDay[leftM], ref);
+#endif
+		return ref; 
+	}
+
+	ref = initMax;
 
 	if (leftM == 1)
-	{	
-		ref = currentMin;
+	{		
+		/* [*TODO*] binary search*/
+		for (int i = d; i <= N; ++i) {
+			if (CSUM[d-1][i] > ref)
+				break;
 
-		int selected = d;
+			INT64 v = CSUM[d-1][i] + CSUM[i][N];
 
-		/* [TODO] binary search*/
-		for (int i = d; i < N; ++i) {
-			for (int j = d+1; (CSUM[d][i] < currentMin) && (j < N); ++j) {
-				INT64 v = CSUM[d][i] + CSUM[i][N];
-
-				if (v < ref) {
-					ref = v;
-					selected = i;
-				}
+#ifdef DEBUG
+			printf("\t- findMin(%d,%d) leftM=1 : CSUM(i=%d,N=%d,v=%lld) + CSUM(j=%d,N=%d,v=%lld) --> %lld\n", d, leftM, d, i, CSUM[d][i], i, N, CSUM[i][N], v);
+#endif
+			if (v <= ref) {
+#ifdef DEBUG
+				printf("\t- findMin(%d,%d) MIN change [day=%d] %lld -> %lld, day[%d] = %d\n", d, leftM, i, ref, v, leftM, i);
+#endif
+				ref = v;
+				cacheDay[leftM] = i;
 			}
 		}
 
-		s.push_back(selected);
 		return ref;
 	}
 
-	ref = currentMin;
+	for (int i = d; i <= (N - leftM+1); ++i) {
+		/* select between [i+1 .. (N-leftM+1)] */
+#ifdef DEBUG
+		printf("+ findMin(%d,%d) leftM=%d : CSUM(i=%d,j=%d,v=%lld) + findMinSet(...) --> CALL...\n", d, leftM, leftM, d-1, i, CSUM[d-1][i]);
+#endif
+		if (CSUM[d - 1][i] > ref)
+		{
+			break;
+		}
 
-	int selected = d;
-
-	for (int base = d; base <= N - leftM; ++base) {
-		for (int j = base + 1; (CSUM[base][j] < currentMin) && (j < N); ++j) {
-			INT64 v = CSUM[base][j] + findMinSet(s, j, leftM -1);
-
-			if (v < ref) {
-				ref = v;
-				selected = j;
-			}
+		INT64 v = CSUM[d-1][i] + findMinSet(i+1, leftM-1);
+#ifdef DEBUG
+		printf("+ findMin(%d,%d) leftM=%d : + findMinSet(%j=%d, leftM=%d) == %lld\n", d, leftM, leftM, i+1, leftM-1, v);
+#endif
+		if (v <= ref) {
+#ifdef DEBUG
+			printf("+ findMin(%d,%d) MIN change [day=%d] %lld -> %lld, day[%d] = %d\n", d, leftM, i, ref, v, leftM, i);
+#endif
+			ref = v;
+			cacheDay[leftM] = i;
 		}
 	}
 
-	s.push_back(selected);
 	return ref;
-
 }
 
-INT64 solve(vector<int>& s)
+INT64 solve()
 {
 	memset(cache, -1ll, sizeof(cache));
-	currentMin = BSUM[N];
+	memset(cacheDay, -1, sizeof(cacheDay));
 
-	return findMinSet(s, 1, M);
+	initMax = BSUM[N];
+
+	return findMinSet(1, M);
 }
 
 int main()
 {
 #ifdef DEBUG1
-	//freopen("sample_input.txt", "r", stdin);
-	freopen("sw12.txt", "r", stdin);
+	freopen("sample_input.txt", "r", stdin);
+	//freopen("sw12.txt", "r", stdin);
 	freopen("result.txt", "w", stdout);
 #endif
 
@@ -264,8 +189,10 @@ int main()
 			for (int j = i+1; j <= N; ++j) {
 				if (i) {
 					CSUM[i][j] = BSUM[j] - BSUM[i] - ABIT.sum(i + 1, j) * ABIT.sum(i);
+#ifdef DEBUG
 					printf("debug> CSUM[%d][%d],v=%lld === BSUM[j=%d,v=%lld] - BSUM[i=%d,v=%lld] - ABIT.RANGE(%d,%d,v=%lld)*ABIT.RANGE(%d,v=%lld) --> %lld\n",
 						i, j, CSUM[i][j], j, BSUM[j], i, BSUM[i], i + 1, j, ABIT.sum(i + 1, j), i, ABIT.sum(i), ABIT.sum(i + 1, j) * ABIT.sum(i));
+#endif
 				}
 				else {
 					CSUM[i][j] = BSUM[j];
@@ -273,19 +200,22 @@ int main()
 			}
 		}
 
+#ifdef DEBUG
 		for (int i = 0; i <= N; ++i) {
 			for (int j = 1; j <= N; ++j) {
 				printf(" %05lld", CSUM[i][j]);
 			}
 			printf("\n");
 		}
+#endif
+		INT64 result = solve();
 
-		vector<int> selected;
+		printf("#%d %lld", t, result);
+		for (int i = M; i >= 1; --i) {
+			printf(" %d", cacheDay[i]);
+		}
+		printf("\n");
 
-		selected.clear();
-		INT64 result = solve(selected);
-
-		printf("#%d %lld\n", t, result);
 		// printf("\n = %lld + %lld + %lld = %lld\n", BSUM[3], CSUM[3][6], CSUM[6][N], BSUM[3] + CSUM[3][6] + CSUM[6][N]);
 #if 0
 		NK = (N == K);
