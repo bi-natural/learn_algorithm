@@ -16,20 +16,21 @@ using namespace std;
 
 typedef long long INT64;
 const int MAX_N = 101;
+const int MAX_M = 11;
 
 class BIT {
-	INT64 ptree[MAX_N + 1];
+	INT64 tree[MAX_N + 1];
 	int size;
 
 public:
 	void init(int n) {
 		size = n;
-		memset(ptree, 0, sizeof(ptree));
+		memset(tree, 0, sizeof(tree));
 	}
 
 	INT64 sum(int b) {
 		INT64 sum = 0;
-		for (; b; b -= LSB(b)) sum += ptree[b];
+		for (; b; b -= LSB(b)) sum += tree[b];
 		return sum;
 	}
 
@@ -41,7 +42,7 @@ public:
 	}
 
 	void add(int k, INT64 v) {
-		for (; k <= size; k += LSB(k)) ptree[k] += v;
+		for (; k <= size; k += LSB(k)) tree[k] += v;
 	}
 
 	void dump_sum(char tag[], int s, int d) {
@@ -60,19 +61,28 @@ INT64 CSUM[MAX_N + 1][MAX_N + 1];
 
 int CASE, N, M;
 
-INT64 cache[11][MAX_N+1];
+INT64 cache[MAX_M+1][MAX_N+1];
 INT64 initMax;
-int   cacheDay[11];
+int   cacheDay[MAX_M+1];
 
 INT64 findMinSet(int d, int leftM)
 {
 	INT64& ref = cache[leftM][d];
 
 	if (leftM == (N-d+1)) {
+#ifdef DEBUG
+		printf("! findMin(%d,%d) M=N (%d = %d)\n", d, leftM, leftM, N - d + 1);
+#endif
 		for (int i = leftM, k = d; i >= d; --i, --k) {
+#ifdef DEBUG
+			printf("! findMin(%d,%d) cacheDay[i=%d] = %d\n", d, leftM, d, leftM);
+#endif
 			cacheDay[i] = N-i+1;
 			// cache[i][k] = findMinSet(k +1, i -1);
 		}
+#ifdef DEBUG
+		printf("! findMin(%d,%d) cache[d=%d][M=%d] = 0\n", d, leftM, d, leftM);
+#endif
 		return ref = 0ll;
 	}
 
@@ -163,7 +173,7 @@ int main()
 			scanf("%lld", &A[i]);
 		}
 
-		ABIT.init(N);
+		ABIT.init(MAX_N);
 		for (int i = 1; i <= N; ++i) {
 #ifdef DEBUG
 			printf(" > add %d, %lld\n", i, A[i]);
