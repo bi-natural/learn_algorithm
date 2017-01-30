@@ -53,7 +53,6 @@ public:
 	}
 };
 
-
 INT64 A[MAX_N + 1];
 BIT   ABIT;
 INT64 BSUM[MAX_N + 1];
@@ -63,56 +62,66 @@ int CASE, N, M;
 
 INT64 cache[MAX_M+1][MAX_N+1];
 INT64 initMax;
-int   cacheDay[MAX_M+1];
+int   choices[MAX_M+1][MAX_N+1];
 
-INT64 findMinSet(int d, int leftM)
+INT64 findMinSet(int level, int d, int leftM)
 {
+	char level_buf[200];
+
+	memset(level_buf, '\0', sizeof(level_buf));
+	for (int i = 0; i < (level*2); i += 2) {
+		level_buf[i] = ' ';
+		level_buf[i+1] = ' ';
+	}
+
+	if (d > N || leftM < 0)
+		return 0ll;
+
 	INT64& ref = cache[leftM][d];
 
 	if (leftM == (N-d+1)) {
+		choices[N-d+1][d] = d;
+
 #ifdef DEBUG
-		printf("! findMin(%d,%d) M=N (%d = %d)\n", d, leftM, leftM, N - d + 1);
+		printf("%s findMin(%d,%d) M=N (%d = %d)\n", level_buf, d, leftM, leftM, N - d + 1);
+		printf("%s findMin(%d,%d) choices[i=%d] = %d\n", level_buf, d, leftM, N - d + 1, d);
 #endif
-		for (int i = leftM, k = d; i >= d; --i, --k) {
-#ifdef DEBUG
-			printf("! findMin(%d,%d) cacheDay[i=%d] = %d\n", d, leftM, d, leftM);
-#endif
-			cacheDay[i] = N-i+1;
-			// cache[i][k] = findMinSet(k +1, i -1);
-		}
-#ifdef DEBUG
-		printf("! findMin(%d,%d) cache[d=%d][M=%d] = 0\n", d, leftM, d, leftM);
-#endif
-		return ref = 0ll;
+
+		return ref = findMinSet(level+1, d+1, leftM-1);
 	}
 
-	if (ref != -1ll) { 
+	if (ref != -1ll) {
 #ifdef DEBUG
-		printf("\t- findMin(%d,%d) [day=%d] --> cache : %lld\n", d, leftM, cacheDay[leftM], ref);
+		printf("%s findMin(%d,%d) [day=%d] --> cache : %lld\n", level_buf, d, leftM, choices[leftM][d], ref);
 #endif
-		return ref; 
+		return ref;
 	}
 
 	ref = initMax;
 
+	/* leftM is '1', and today(d) is not end of days */
 	if (leftM == 1)
-	{		
+	{
 		/* [*TODO*] binary search*/
 		for (int i = d; i <= N; ++i) {
-			if (CSUM[d-1][i] > ref)
-				break;
+			if (CSUM[d-1][i] > ref) {
+#ifdef DEBUG
+				printf("%s findMin(%d,%d) M=1 CSUM(i=%d,N=%d,v=%lld) > ref=%lld CONT...\n", level_buf, d, leftM, d-1, i, CSUM[d-1][i], ref);
+				continue;
+#endif
+			}
 
 			INT64 v = CSUM[d-1][i] + CSUM[i][N];
 
 #ifdef DEBUG
-			printf("\t- findMin(%d,%d) leftM=1 : CSUM(i=%d,N=%d,v=%lld) + CSUM(j=%d,N=%d,v=%lld) --> %lld\n", d, leftM, d, i, CSUM[d][i], i, N, CSUM[i][N], v);
+			printf("%s findMin(%d,%d) M=1 : CSUM(i=%d,N=%d,v=%lld) + CSUM(j=%d,N=%d,v=%lld) --> %lld\n", level_buf, d, leftM, d, i, CSUM[d-1][i], i, N, CSUM[i][N], v);
 #endif
-			if (v <= ref) {
+			if (v < ref) {
 #ifdef DEBUG
-				printf("\t- findMin(%d,%d) MIN change [day=%d] %lld -> %lld, day[%d] = %d\n", d, leftM, i, ref, v, leftM, i);
+				printf("%s +--> findMin(%d,%d) MIN change [day=%d] %lld -> %lld, day[%d] = %d\n", level_buf, d, leftM, i, ref, v, leftM, i);
 #endif
 				ref = v;
-				cacheDay[leftM] = i;
+				choices[leftM][d] = i;
 			}
 		}
 
@@ -122,23 +131,29 @@ INT64 findMinSet(int d, int leftM)
 	for (int i = d; i <= (N - leftM+1); ++i) {
 		/* select between [i+1 .. (N-leftM+1)] */
 #ifdef DEBUG
-		printf("+ findMin(%d,%d) leftM=%d : CSUM(i=%d,j=%d,v=%lld) + findMinSet(...) --> CALL...\n", d, leftM, leftM, d-1, i, CSUM[d-1][i]);
+		printf("%s findMin(%d,%d) : CSUM(i=%d,j=%d,v=%lld) + findMinSet(%d, %d) --> CALL...\n", level_buf, d, leftM, d-1, i, CSUM[d-1][i], i+1, leftM-1);
 #endif
 		if (CSUM[d - 1][i] > ref)
 		{
-			break;
+#ifdef DEBUG
+			printf("%s findMin(%d,%d) : CSUM(i=%d,N=%d,v=%lld) > ref=%lld CONT...\n", level_buf, d, leftM, d-1, i, CSUM[d-1][i], ref);
+			continue;
+#endif
 		}
 
-		INT64 v = CSUM[d-1][i] + findMinSet(i+1, leftM-1);
+		INT64 v, f;
+
+		/* choice [i] */
+		v = CSUM[d - 1][i] + findMinSet(level+1, i+1, leftM-1);
 #ifdef DEBUG
-		printf("+ findMin(%d,%d) leftM=%d : + findMinSet(%j=%d, leftM=%d) == %lld\n", d, leftM, leftM, i+1, leftM-1, v);
+		printf("%s findMin(%d,%d) : CSUM(%d)= %lld + findMinSet(i+1=%d, leftM-1=%d) --> RET =  %lld\n", level_buf, d, leftM, i, CSUM[d-1][i], i+1, leftM-1, v);
 #endif
-		if (v <= ref) {
+		if (v < ref) {
 #ifdef DEBUG
-			printf("+ findMin(%d,%d) MIN change [day=%d] %lld -> %lld, day[%d] = %d\n", d, leftM, i, ref, v, leftM, i);
+			printf("%s +--> findMin(%d,%d) MIN change [day=%d] %lld -> %lld, day[%d] = %d\n", level_buf, d, leftM, i, ref, v, leftM, i);
 #endif
 			ref = v;
-			cacheDay[leftM] = i;
+			choices[leftM][d] = i;
 		}
 	}
 
@@ -148,11 +163,11 @@ INT64 findMinSet(int d, int leftM)
 INT64 solve()
 {
 	memset(cache, -1ll, sizeof(cache));
-	memset(cacheDay, -1, sizeof(cacheDay));
+	memset(choices, -1, sizeof(choices));
 
 	initMax = BSUM[N];
 
-	return findMinSet(1, M);
+	return findMinSet(0, 1, M);
 }
 
 int main()
@@ -165,8 +180,6 @@ int main()
 
 	scanf("%d", &CASE);
 	for (int t = 1; t <= CASE; ++t) {
-		bool MK = false;
-
 		scanf("%d %d", &N, &M);
 
 		for (int i = 1; i <= N; ++i) {
@@ -206,7 +219,7 @@ int main()
 				}
 				else {
 					CSUM[i][j] = BSUM[j];
-				}	
+				}
 			}
 		}
 
@@ -221,27 +234,10 @@ int main()
 		INT64 result = solve();
 
 		printf("#%d %lld", t, result);
-		for (int i = M; i >= 1; --i) {
-			printf(" %d", cacheDay[i]);
+		for (int i = M, d = 1; i >= 1; --i, ++d) {
+			d = choices[i][d];
+			printf(" %d", d);
 		}
 		printf("\n");
-
-		// printf("\n = %lld + %lld + %lld = %lld\n", BSUM[3], CSUM[3][6], CSUM[6][N], BSUM[3] + CSUM[3][6] + CSUM[6][N]);
-#if 0
-		NK = (N == K);
-		if (NK)
-			--K;
-
-		vector<long long> result = healthboy2();
-
-		printf("#%d %lld", t, result[0]);
-		for (int i = 2; i < result.size() - 1; ++i) {
-			printf(" %lld", result[i]);
-		}
-		if (NK)
-			printf(" %d", N);
-
-		printf("\n");
-#endif
 	}
 }
