@@ -14,34 +14,36 @@ using namespace std;
 #define DEBUG
 #define DEBUG1
 
+typedef long long INT64;
+const int MAX_N = 101;
+
 class BIT {
-	long long *ptree;
+	INT64 ptree[MAX_N + 1];
 	int size;
 
 public:
-	BIT(int n) {
+	void init(int n) {
 		size = n;
-		ptree = new long long[n + 1];
-		init();
+		memset(ptree, 0, sizeof(ptree));
 	}
-	~BIT() { delete[] ptree; }
-	void init() {
-		memset(ptree, 0, (size + 1)*sizeof(long long));
-	}
-	long long sum(int b) {
-		long long sum = 0;
+
+	INT64 sum(int b) {
+		INT64 sum = 0;
 		for (; b; b -= LSB(b)) sum += ptree[b];
 		return sum;
 	}
-	long long sum(int a, int b) {
+
+	INT64 sum(int a, int b) {
 		if (a == 1)
 			return sum(b);
 		else
 			return sum(b) - sum(a - 1);
 	}
-	void add(int k, long long v) {
+
+	void add(int k, INT64 v) {
 		for (; k <= size; k += LSB(k)) ptree[k] += v;
 	}
+
 	void dump_sum(char tag[], int s, int d) {
 		printf("dump> %s :", tag);
 		for (int i = s; i <= d; ++i)
@@ -50,22 +52,13 @@ public:
 	}
 };
 
-const int MAX_N = 101;
+
+INT64 A[MAX_N + 1];
+BIT   ABIT;
+INT64 BSUM[MAX_N + 1];
+INT64 CSUM[MAX_N + 1][MAX_N + 1];
 
 int CASE, N, K;
-int ins[MAX_N];
-BIT bit(MAX_N + 1);
-
-long long area(int s, int d)
-{
-	long long a = bit.sum(s, d);
-	long long b = bit.sum(d + 1, N);
-
-#ifdef DEBUG
-	printf(" -- (%lld, %lld) = %d\n", b, a, a*b);
-#endif
-	return a * b;
-}
 
 bool optimize1(vector<long long>& v)
 {
@@ -161,31 +154,42 @@ vector<long long> healthboy2()
 int main()
 {
 #ifdef DEBUG1
-	freopen("C:\\temp\\sample_input.txt", "r", stdin);
-	//freopen("C:\\temp\\input1.txt", "r", stdin);
-	freopen("C:\\temp\\result.txt", "w", stdout);
+	//freopen("sample_input.txt", "r", stdin);
+	freopen("input1.txt", "r", stdin);
+	freopen("result.txt", "w", stdout);
 #endif
+	
 	scanf("%d", &CASE);
 	for (int t = 1; t <= CASE; ++t) {
 		bool NK = false;
 
 		scanf("%d %d", &N, &K);
+		K = min(N, 10);
 
-		for (int i = 0; i < N; ++i) {
-			scanf("%d", &ins[i]);
+		for (int i = 1; i <= N; ++i) {
+			scanf("%lld", &A[i]);
 		}
 
-		bit.init();
-		for (int i = 1; i < N + 1; ++i) {
+		ABIT.init(N);
+		for (int i = 1; i <= N ; ++i) {
 #ifdef DEBUG
-			printf(" > add %d, %d\n", i, ins[i - 1]);
+			printf(" > add %d, %lld\n", i, A[i]);
 #endif
-			bit.add(i, (long long) ins[i - 1]);
+			ABIT.add(i, A[i]);
 		}
 #ifdef DEBUG
-		bit.dump_sum("init", 1, N);
+		ABIT.dump_sum("ABIT(init)", 1, N);
 #endif
 
+		memset(BSUM, 0, sizeof(BSUM));
+		for (int i = 2; i <= N; ++i)
+			BSUM[i] = BSUM[i-1] + A[i] * ABIT.sum(i-1);
+
+#ifdef DEBUG
+		BSUM.dump_sum("BSUM(init)", 1, N);
+#endif
+
+#if 0
 		NK = (N == K);
 		if (NK)
 			--K;
@@ -200,5 +204,6 @@ int main()
 			printf(" %d", N);
 
 		printf("\n");
+#endif
 	}
 }
