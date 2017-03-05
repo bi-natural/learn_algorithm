@@ -19,9 +19,6 @@
  * 
  */
 
-import edu.princeton.cs.algs4.StdRandom;
-import edu.princeton.cs.algs4.StdStats;
-
 public class PercolationStats {
     
     private static final double CONFIDENCE = 1.96;
@@ -36,7 +33,7 @@ public class PercolationStats {
     {
         Percolation p = new Percolation(size);
         
-        while (! p.percolates()) {
+        while (!p.percolates()) {
             int row = (int) (Math.round(Math.random() * size + 0.5));
             int col = (int) (Math.round(Math.random() * size + 0.5));
             

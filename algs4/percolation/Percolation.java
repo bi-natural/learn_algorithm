@@ -27,8 +27,6 @@
  * - 
  */
 
-import edu.princeton.cs.algs4.StdRandom;
-import edu.princeton.cs.algs4.StdStats;
 import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 
 public class Percolation {
@@ -41,9 +39,9 @@ public class Percolation {
    
    private WeightedQuickUnionUF unionFind;
    
-   private boolean isValidIndex(int i, int j)
+   private boolean isValidIndex(int row, int col)
    {
-       return (i >= 1) && (i <= size) && (j >= 1) && (i <= size);
+       return (row >= 1) && (row <= size) && (col >= 1) && (col <= size);
    }
   
    private int toUnionIndex(int row, int col)
@@ -53,7 +51,7 @@ public class Percolation {
    
    private void union(int idx1, int idx2)
    {
-       if (sites[idx1] == true && sites[idx2] == true)
+       if (sites[idx1] && sites[idx2])
        {
            unionFind.union(idx1, idx2);
        }
@@ -67,18 +65,44 @@ public class Percolation {
        size = n;
        sites = new boolean[size*size + 2];
        
-       for (int i = 0; i < (size*size); ++i) {
+       for (int i = 0; i < (size*size); ++i) 
+       {
            sites[i] = false;
        }
        
        numOfOpenSites = 0;
        
-       vTopIndex      = size * size;    
-       vBottomIndex   = vTopIndex + 1;
-       sites[vTopIndex]    = true;
+       vTopIndex = size * size;    
+       vBottomIndex = vTopIndex + 1;
+       sites[vTopIndex] = true;
        sites[vBottomIndex] = true;
        
-       unionFind = new WeightedQuickUnionUF( size * size + 2 );
+       unionFind = new WeightedQuickUnionUF(size * size + 2);
+   }
+   
+   private void North(int row, int col, int index) {
+       if (row == 1) 
+           union(index, vTopIndex);
+       else
+           union(index, toUnionIndex(row - 1, col));
+   }
+   
+   private void West(int row, int col, int index) {
+       if (col != 1)
+           union(index, toUnionIndex(row, col - 1));
+       
+   }
+   
+   private void East(int row, int col, int index) {
+       if (col != size)
+           union(index, toUnionIndex(row, col + 1));
+   }
+   
+   private void South(int row, int col, int index) {
+       if (row == size) 
+           union(index, vBottomIndex);
+       else
+           union(index, toUnionIndex(row + 1, col));
    }
    
    public    void open(int row, int col)    // open site (row, col) if it is not open already
@@ -89,36 +113,18 @@ public class Percolation {
        int index = toUnionIndex(row, col);
        
        sites[index] = true;
-       numOfOpenSites ++;
+       numOfOpenSites++;
 
-       if (row == 1) 
-       {
-           union(index, vTopIndex);
-       } 
-       else 
-       {
-           union(index, toUnionIndex(row - 1, col));
-       }
+       North(row, col, index);
+       West(row, col, index);
+       East(row, col, index);
+       South(row, col, index);
        
-       if (row == size) 
-       {
-           union(index, vBottomIndex);
-       } 
-       else 
-       {
-           union(index, toUnionIndex(row + 1, col));
-       }
-        
-       if (col > 1)
-           union(index, toUnionIndex(row, col - 1));
-       
-       if (col < size)
-           union(index, toUnionIndex(row, col + 1));
    }
    
    public boolean isOpen(int row, int col)  // is site (row, col) open?
    {
-       if (! isValidIndex(row, col))
+       if (!isValidIndex(row, col))
            throw new java.lang.IndexOutOfBoundsException();
        
        return sites[toUnionIndex(row, col)];           
@@ -126,7 +132,7 @@ public class Percolation {
    
    public boolean isFull(int row, int col)  // is site (row, col) full?
    {
-       if (! isOpen(row, col))
+       if (!isOpen(row, col))
            return false;
        
        return unionFind.connected(toUnionIndex(row, col), vTopIndex);
