@@ -1,0 +1,15 @@
+inital iteration(0) local = 
+initial iteration(0) global = 
+1 == BSERACH(LocalTopK, 20) = 3
+iteration(1) local =    20
+iteration(1) global =    20
+2 == BSERACH(LocalTopK, -10) = 3
+iteration(2) local =    10  -10
+iteration(2) global =    20   10  -10
+2 == BSERACH(LocalTopK, 10) = 3
+iteration(3) local =    20   10    0
+iteration(3) global =    20   20   10   10
+4 == BSERACH(LocalTopK, 5) = 3
+iteration(4) local =    25   15    5    5
+iteration(4) global =    25   20   20   15
+15
